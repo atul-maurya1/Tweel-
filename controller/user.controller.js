@@ -2,9 +2,278 @@ import User from '../model/user.model.js'
 import apiError from '../utils/apiError.js'
 import apiResponse from '../utils/apiResponse.js'
 import asyncHandler from '../utils/asyncHandler.js'
+import generateOTP from '../utils/otpGenerate.js'
+import tempUser from '../model/tempUser.model.js'
+import {sendMail} from '../utils/sendMail.js'
+
+
+export const gnerateaccessTokenAndRefreshToken = async (userId) => {
+    try{
+
+        const user = await User.findById(userId)
+      
+        const accessToken =  await user.generateAccessToken()
+        const refreshToken  = await user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save()
+        return {accessToken, refreshToken}
+
+    }catch(e){
+        console.error("error while generating access token and refresh token: ", e)
+         throw new apiError(500, "Failed to generate tokens")
+    }
+}
 
 
 export const userRegister = asyncHandler(async(req, res)=> {
+  const {firstName, lastName, email, userName, dob} = req.body
+  if([firstName, email, userName].some(field => field?.trim()==="")){
+    throw new apiError(400, "all fields are required")
+  }
+
+  const isExistsUserName = await User.findOne({userName: userName})
+  if(isExistsUserName){
+    throw new apiError(400, "username is already exists")
+  }
+
+  const birthDate = new Date(dob);
+  const today = new Date();
   
+   if(birthDate > today){
+      throw new apiError(400, "please enter valid dob")
+    }
+
+    const ageLimit = new Date();
+    ageLimit.setFullYear(ageLimit.getFullYear() - 18);
+    if(birthDate > ageLimit){
+        throw new apiError(400, 'age must be 18 years old')
+    }
+
+    const otp = generateOTP()
+   // console.log("otp is: ", otp)
+   const tempuser = await tempUser.create({
+    firstName,
+    lastName,
+    email,
+    userName,
+    dob,
+    otp: otp,
+    otpExpiry: Date.now() + 5 * 60 * 1000, // 5 minutes
+   })
+
+   const message = `<div style="font-family: Arial, sans-serif; padding:20px;">
+                    <h2>Tweel - Email Verification</h2>
+                    <p>Your OTP for email verification is:</p>
+                    <h1 style="letter-spacing:5px;">${otp}</h1>
+                    <p>This OTP is valid for 5 minutes.</p>
+                    <p>If you did not request this, please ignore this email.</p>
+                    <br/>
+                    <p>Thanks,<br/>Tweel Team</p>
+                    </div>`
+
+   await sendMail(tempuser.email, "OTP Verification - Tweel", message) 
+   
+   return res.
+   status(201).
+   json(new apiResponse(201, tempuser, "otp send successfully"))
     
 })
+
+
+export const otpVerification = asyncHandler(async(req, res)=> {
+    const id = req.params.id
+    const {otp} = req.body
+    if(!otp){
+        throw new apiError(400, 'please enter otp')
+    }
+
+    const tempuser = await tempUser.findById({_id: id})
+    if(!tempuser){
+        throw new apiError(400, 'something went wrong')
+    }
+
+    if(otp.toString()!==tempuser.otp.toString()){
+        throw new apiError(400, 'Invalid otp')
+    }
+    if(otp.otpExpiry < Date.now){
+        throw new apiError(400, 'otp expired')
+    }
+
+    const user = await User.create({
+        firstName: tempuser.firstName,
+        lastName: tempuser.lastName,
+        email: tempuser.email,
+        userName: tempuser.userName,
+        dob: tempuser.dob,
+        isVerified: true
+    })
+
+    await tempUser.findByIdAndDelete(id)
+
+    return res
+           .status(201)
+           .json(new apiResponse(201, user, "user register and verified successfully"))
+
+})
+
+
+export const resendOtp = asyncHandler(async(req, res) => {
+    const id = req.params.id
+    if(!id){
+        throw new apiError(400, 'something went wrong id missing')
+    }
+    const tempuser = await tempUser.findById({_id: id})
+    if(!tempuser){
+        throw new apiError(400, 'registeration failed plaese try again')
+    }
+
+    const otp = generateOTP()
+    tempuser.otp = otp
+    tempuser.otpExpiry = Date.now() + 5 * 60 * 1000, // 5 minutes
+    await tempuser.save()
+
+    const message = `<div style="font-family: Arial, sans-serif; padding:20px;">
+                    <h2>Tweel - Email Verification</h2>
+                    <p>Your OTP for email verification is:</p>
+                    <h1 style="letter-spacing:5px;">${otp}</h1>
+                    <p>This OTP is valid for 5 minutes.</p>
+                    <p>If you did not request this, please ignore this email.</p>
+                    <br/>
+                    <p>Thanks,<br/>Tweel Team</p>
+                    </div>`
+
+   await sendMail(tempuser.email, "OTP Verification - Tweel", message) 
+
+   return res
+          .status(200)
+          .json(new apiResponse(200, tempuser, 're-send otp seccussfully'))
+})
+
+
+export const createPassword = asyncHandler(async(req, res) => {
+    const userId = req.params.userId
+    if(!userId){
+        throw new apiError(400, 'user id is missing')
+    }
+    const{password, confirmPassword} = req.body
+    if(!password || !confirmPassword){
+        throw new apiError(400, 'all fields are required')
+    }
+    if(password !== confirmPassword){
+        throw new apiError(400, 'password and confirmPassword is not same')
+    }
+
+    const user = await User.findById(userId)
+    if(user.password){
+        throw new apiError(400, 'password is already created please login ')
+    }
+    user.password = password
+    await user.save()
+
+    const {accessToken, refreshToken} = await gnerateaccessTokenAndRefreshToken(user._id)
+    const logginUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+      .status(200)
+      .cookie("refreshToken", refreshToken, cookieOptions)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .json(
+        new apiResponse(200, logginUser, 'password is created')
+      )
+
+}) 
+
+export const userLogin =  asyncHandler(async(req, res) => {
+    const {userName, password} = req.body
+    if(!userName || !password){
+        throw new apiError(400, 'all fields are required')
+    }
+
+    const isUserExits = await User.findOne({userName: userName})
+    if(!isUserExits){
+        throw new apiError(404, "User not exits")
+    }
+
+    const isPasswordValid = await isUserExits.isPasswordCorrect(password)
+    if(!isPasswordValid){
+        throw new apiError(400, "Invalid password")
+    }
+
+    const {accessToken, refreshToken} = await gnerateaccessTokenAndRefreshToken(isUserExits._id)
+    const loginUser = await User.findById(isUserExits._id).select("-password -refreshToken")
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+           .status(200)
+           .cookie("refreshToken", refreshToken, cookieOptions)
+           .cookie("accessToken", accessToken, cookieOptions)
+           .json(new apiResponse(200, loginUser, 'user login successfully'))
+          
+ 
+})
+   
+
+export const userLogout = asyncHandler(async(req, res) => {
+        const userId = req.user._id
+        const user = await User.findByIdAndUpdate(userId, {
+           refreshToken: null
+        }, {new: true})
+
+        if(!user){
+            throw new apiError(404, 'user not found')
+        }
+
+       const cookieOptions = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res
+               .status(200)
+               .clearCookie('refreshToken', cookieOptions)
+               .clearCookie('accessToken', cookieOptions)
+               .json(new apiResponse(200, 'user logout successfully'))           
+})
+
+export const updateAvatar = asyncHandler(async(req, res) => {
+
+})
+
+
+export const updateCoverImage = asyncHandler(async(req, res) => {
+
+})
+
+
+export const userEditProfile = asyncHandler(async(req, res) => {
+
+    // edit name, userName{unique} about, extrenal link, gender
+
+})
+
+
+export const getProfile = asyncHandler(async(req, res)=>{
+    const userName = req.params.userName
+    if(!userName){
+        throw new apiError(400, "user not exists")
+    }
+})
+
+//setting => personal info, edit like email
+// setting => change password and forgotPassword{when login}
+
+// user profile => user/userName/tweet
+// user profile => user/userName/likedBy
+// user prfile => user/userName/media
+// user profile => user/userName/replies
+// user profile => followers and following {count and list}
+//

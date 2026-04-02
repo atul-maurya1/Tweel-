@@ -2,11 +2,27 @@ import express from "express"
 
 const userRouter = express.Router()
 
-import {userRegister} from '../controller/user.controller.js'
+import {verifyJWT} from '../middleware/auth.middleware.js'
+
+import {
+    userRegister,
+    otpVerification,
+    resendOtp,
+    createPassword,
+    userLogin,
+    userLogout
+  } from '../controller/user.controller.js'
 
 userRouter
-         .get('/register', userRegister)
+         .post('/register', userRegister)
+         .post('/otp-verification/:id', otpVerification)
+         .post('/resend-otp/:id', resendOtp)
+         .post('/create-password/:userId', createPassword)  //*
+         .post('/login', userLogin)
+         .post('/logout', verifyJWT, userLogout)
+
+         
          
 
 
-export default userRouter
+export default userRouter   

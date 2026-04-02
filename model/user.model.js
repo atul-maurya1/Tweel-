@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type:String,
-        required: [true, 'password is required'],
+       // required: [true, 'password is required'],
         trim: true,
         minlength: [6 ,' minimum 6 char']
     },
@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema({
     },
     dob:{
         type: Date
+    },
+    isVerified: {
+         type: Boolean,
+         default: false
     },
     about: {
        type: String,
@@ -56,21 +60,25 @@ const userSchema = new mongoose.Schema({
     },
     externalUrl: {
         type: String
+    },
+    refreshToken: {
+        type: String
     }
 }, {timestamps: true})
 
 
 userSchema.pre("save", async function(){
-    if(!this.isModifies("password")) return
-    this.password = await bcrypt.hash(this.password , 10)
+      if (!this.isModified("password")) return;
+      this.password = await bcrypt.hash(this.password, 10);
+      
 })
 
-userSchema.method.isPasswordCorrect = async function(password){
+userSchema.methods.isPasswordCorrect = async function(password){
      return await bcrypt.compare(password, this.password)
 }
 
 
-userSchema.method.generateAccessToken = async function(){
+userSchema.methods.generateAccessToken = async function(){
     return jwt.sign(
         {
         _id: this._id,
