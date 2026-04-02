@@ -5,6 +5,8 @@ import asyncHandler from '../utils/asyncHandler.js'
 import generateOTP from '../utils/otpGenerate.js'
 import tempUser from '../model/tempUser.model.js'
 import {sendMail} from '../utils/sendMail.js'
+import {uploadOnCloudinary} from '../config/cloudnary.js'
+import {deleteFromCloudinary} from '../config/cloudnary.js'
 
 
 export const gnerateaccessTokenAndRefreshToken = async (userId) => {
@@ -184,7 +186,7 @@ export const createPassword = asyncHandler(async(req, res) => {
       .cookie("refreshToken", refreshToken, cookieOptions)
       .cookie("accessToken", accessToken, cookieOptions)
       .json(
-        new apiResponse(200, logginUser, 'password is created')
+        new apiResponse(200, {user: logginUser, accessToken, refreshToken}, 'password is created and loggin user')
       )
 
 }) 
@@ -216,7 +218,7 @@ export const userLogin =  asyncHandler(async(req, res) => {
            .status(200)
            .cookie("refreshToken", refreshToken, cookieOptions)
            .cookie("accessToken", accessToken, cookieOptions)
-           .json(new apiResponse(200, loginUser, 'user login successfully'))
+           .json(new apiResponse(200, {user: loginUser, accessToken, refreshToken }, 'user login successfully'))
           
  
 })
@@ -244,12 +246,67 @@ export const userLogout = asyncHandler(async(req, res) => {
                .json(new apiResponse(200, 'user logout successfully'))           
 })
 
+
+
 export const updateAvatar = asyncHandler(async(req, res) => {
+    const userId = req.user._id
+    const avatarLocalPath = req.file?.path
+    console.log("file is :" , avatarLocalPath)
+    if(!avatarLocalPath){
+        throw new apiError(400, 'please select file')
+    }
+    const cloudinaryFile = await uploadOnCloudinary(avatarLocalPath)
+    if(!cloudinaryFile){
+        throw new apiError(404, 'cloundinary File not found')
+    }
 
+    const user = await User.findById(userId)
+   
+    const avatar = {
+        public_id: cloudinaryFile.public_id,
+        url: cloudinaryFile.url
+    }
+  
+    const updateduser = await User.findByIdAndUpdate(userId, {
+        $set: {avatar}
+    }, {new: true}).select("-password  -refreshToken")
+
+  const isdelete = await deleteFromCloudinary(user.avatar.public_id)
+  console.log(isdelete)
+  return res
+          .status(200)
+          .json(new apiResponse(200, updateduser, 'profile avatar updated successfully'))
 })
-
+  
 
 export const updateCoverImage = asyncHandler(async(req, res) => {
+    const userId = req.user._id
+    const coverImageLocalPath = req.file?.path
+    console.log("file is :" , coverImageLocalPath)
+    if(!coverImageLocalPath){
+        throw new apiError(400, 'please select file')
+    }
+    const cloudinaryFile = await uploadOnCloudinary(coverImageLocalPath)
+    if(!cloudinaryFile){
+        throw new apiError(404, 'cloundinary File not found')
+    }
+
+    const user = await User.findById(userId)
+   
+    const coverImage = {
+        public_id: cloudinaryFile.public_id,
+        url: cloudinaryFile.url
+    }
+  
+    const updateduser = await User.findByIdAndUpdate(userId, {
+        $set: {coverImage}
+    }, {new: true}).select("-password  -refreshToken")
+
+  const isdelete = await deleteFromCloudinary(user.coverImage.public_id)
+  console.log(isdelete)
+  return res
+          .status(200)
+          .json(new apiResponse(200, updateduser, 'profile avatar updated successfully'))
 
 })
 

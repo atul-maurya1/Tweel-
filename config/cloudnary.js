@@ -1,4 +1,5 @@
-import cloudinary from 'cloudinary'
+import { v2 as cloudinary} from 'cloudinary'
+import fs from 'fs'
 
 export const cloudinaryConfig = async () => {
    try{
@@ -17,21 +18,26 @@ export const  uploadOnCloudinary = async(localFilePath) => {
         if(!localFilePath) return null
         //upload file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "auto"
+            resource_type: "auto",
+            folder: "Tweel-images"
         })
         console.log("file is uploaded on cloudinary ", response.url)
         fs.unlinkSync(localFilePath) // remove the locally saved file after successful upload
         return response
     }catch(e){
       fs.unlinkSync(localFilePath) // reomve the locally saved file as the upload operation got failed
+      console.error("error while uploding to cloudinary ", e)
       return null
     }
 }
 
-// export const deleteFromCloudinary = async (private_path) => {
-//     try{
-//         if(!private_path) return null
-//     }catch(err){
-//         console.log('error while deleting from the cloudinary ')
-//     }
-// }
+export const deleteFromCloudinary = async (public_id) => {
+    try{
+        console.log(public_id)
+        if(!public_id) return null
+        const response = await cloudinary.uploader.destroy(public_id)
+         return response
+    }catch(err){
+        console.log('error while deleting from the cloudinary ', err)
+    }
+}

@@ -50,13 +50,13 @@ const userSchema = new mongoose.Schema({
        type: String,
        maxlength: [25, 'maximum 15 chars are allowed']
     },
-    avatar:{
-        public_url: {type: String},
-        private_path: {type: String}
+    avatar: {
+        public_id: {type: String},
+        url: {type: String}
     },
     coverImage: {
-        public_url: {type: String},
-        private_path: {type: String}
+         public_id: {type: String},
+        url: {type: String}
     },
     externalUrl: {
         type: String

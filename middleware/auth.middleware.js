@@ -5,9 +5,7 @@ import User from '../model/user.model.js';
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
     try{ 
-        console.log(req.cookies)
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")  // "Bearer tokenValue" 
-        console.log("token is: ", token)
         if(!token){
             throw new apiError(401, "Unauthorized request, token missing")
         }
