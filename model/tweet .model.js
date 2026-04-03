@@ -1,22 +1,23 @@
 import mongoose from 'mongoose'
 
 const tweetSchema = new mongoose.Schema({
-    owner: {
+    createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
     title: {
         type: String,
         mexlength: 50,
-
     } ,
-    image: {
-       public_url: {type: String},
-        private_path: {type: String}
-    },
+    images:[
+        {
+            public_id: {type: String},
+            url: {type: String}
+        }
+    ],
     video: {
-        public_url: {type: String},
-        private_path: {type: String}
+        public_id: {type: String},
+        url: {type: String}
     },
 
 }, {timestamps: true})

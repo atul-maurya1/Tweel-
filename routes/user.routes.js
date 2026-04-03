@@ -13,7 +13,9 @@ import {
     userLogin,
     userLogout,
     updateAvatar,
-    updateCoverImage
+    updateCoverImage,
+    userEditProfile,
+    refreshAccessToken
   } from '../controller/user.controller.js'
 
 userRouter
@@ -25,7 +27,9 @@ userRouter
          .post('/logout', verifyJWT, userLogout)
          .patch('/edit-profile/avatar', verifyJWT, upload.single('avatar'), updateAvatar)
          .patch('/edit-profile/coverImage', verifyJWT, upload.single('coverImage'), updateCoverImage)
-
+         .patch('/edit-profile/update-details' , verifyJWT,  userEditProfile)
+         .post('/refresh-token', verifyJWT, refreshAccessToken)
+         
 
          
          

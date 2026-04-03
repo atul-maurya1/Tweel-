@@ -4,6 +4,7 @@ import apiResponse from '../utils/apiResponse.js'
 import asyncHandler from '../utils/asyncHandler.js'
 import generateOTP from '../utils/otpGenerate.js'
 import tempUser from '../model/tempUser.model.js'
+import jwt from 'jsonwebtoken'
 import {sendMail} from '../utils/sendMail.js'
 import {uploadOnCloudinary} from '../config/cloudnary.js'
 import {deleteFromCloudinary} from '../config/cloudnary.js'
@@ -16,6 +17,7 @@ export const gnerateaccessTokenAndRefreshToken = async (userId) => {
       
         const accessToken =  await user.generateAccessToken()
         const refreshToken  = await user.generateRefreshToken()
+        // console.log("refresh token: ", refreshToken )
 
         user.refreshToken = refreshToken
         await user.save()
@@ -247,6 +249,47 @@ export const userLogout = asyncHandler(async(req, res) => {
 })
 
 
+export const refreshAccessToken = asyncHandler(async(req, res) => {
+    try{
+       const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+       if(!incomingRefreshToken){
+         throw new apiError(400, 'Unauthorized request')
+       }
+
+       const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+       const user = await User.findById(decodedToken._id)
+       if(!user){
+         throw new apiError(401, "Invalid refresh token")
+       }
+
+       if(incomingRefreshToken !== user?.refreshToken){
+         throw new apiError(401, 'Refresh token is expire or used')
+       }
+
+       const options = {
+         httpOnly: true,
+         secure:  true
+       }
+
+       const {accessToken, refreshToken} = await gnerateaccessTokenAndRefreshToken(user._id)
+       
+       return res
+       .status(200)
+       .cookie("accessToken", accessToken, options)
+       .cookie("refreshTokem", refreshToken , options)
+       .json( 
+         new apiResponse (
+            200, 
+            {accessToken, refreshToken: refreshToken},
+            "Access token refreshed"
+         )
+       )
+
+    }catch(e){
+        throw new apiError(500, e?.message || "Invalid refresh token")
+    }
+})
+
 
 export const updateAvatar = asyncHandler(async(req, res) => {
     const userId = req.user._id
@@ -312,10 +355,31 @@ export const updateCoverImage = asyncHandler(async(req, res) => {
 
 
 export const userEditProfile = asyncHandler(async(req, res) => {
+    const userId = req.user._id   
+    if(!userId){
+        throw new apiError(400, 'userId is missing, user not found')
+    }
+    const {firstName, lastName, userName, about, externalUrl, gender} = req.body
+    
+    const isUserNameExists = await User.findOne({userName: userName})
+    if(isUserNameExists){
+        throw new apiError(400, 'Username is already exists')
+    }
 
-    // edit name, userName{unique} about, extrenal link, gender
+    const user = await User.findByIdAndUpdate(userId, {
+        firstName: firstName,
+        lastName: lastName,
+        userName: userName,
+        about: about,
+        externalUrl: externalUrl,
+        gender: gender
+    }, {new: true}).select("-password -refreshToekn")
 
+    return res
+           .status(200)
+           .json(new apiResponse(200, user, "user details update successfully"))
 })
+
 
 
 export const getProfile = asyncHandler(async(req, res)=>{
