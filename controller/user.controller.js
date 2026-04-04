@@ -389,6 +389,39 @@ export const getProfile = asyncHandler(async(req, res)=>{
     }
 })
 
+export const changePassword = asyncHandler(async(req, res) => {
+    const userId = req.user._id
+    const {oldPassword, newPassword, confirmNewPassword} = req.body
+    if(!oldPassword || !newPassword || !confirmNewPassword){
+     throw new apiError(400, 'all fields are required')
+    }
+    if(newPassword !== confirmNewPassword){
+      throw new apiError(400, "password and confirmPassword is not matched")
+    }
+    const user = await User.findById(userId)
+
+    if(user.password !== oldPassword){
+        throw new apiError(400, "old password is wrong")
+    }
+
+    user.password = newPassword
+    await user.save()
+
+    const cookieOptions = {
+            httpOnly: true,
+            secure: true
+     }
+
+    return res
+           .status(200)
+           .clearCookie('refreshToken', cookieOptions)
+           .clearCookie('accessToken', cookieOptions)
+           .json(200, 'password change successfully')
+
+
+})
+
+
 //setting => personal info, edit like email
 // setting => change password and forgotPassword{when login}
 
