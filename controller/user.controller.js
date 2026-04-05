@@ -129,7 +129,7 @@ export const resendOtp = asyncHandler(async(req, res) => {
     }
     const tempuser = await tempUser.findById({_id: id})
     if(!tempuser){
-        throw new apiError(400, 'registeration failed plaese try again')
+        throw new apiError(400, 'registeration failed plaese try again ||  failed plaese try again')
     }
 
     const otp = generateOTP()
@@ -400,7 +400,7 @@ export const changePassword = asyncHandler(async(req, res) => {
     }
     const user = await User.findById(userId)
 
-    if(user.password !== oldPassword){
+    if(! await user.isPasswordCorrect(oldPassword)){
         throw new apiError(400, "old password is wrong")
     }
 
@@ -416,10 +416,43 @@ export const changePassword = asyncHandler(async(req, res) => {
            .status(200)
            .clearCookie('refreshToken', cookieOptions)
            .clearCookie('accessToken', cookieOptions)
-           .json(200, 'password change successfully')
-
+           .json(new apiResponse(200, 'password change successfully'))
 
 })
+
+ export const forgotPassword = asyncHandler(async(req, res) => {
+//     const{userName} = req.body
+//     if(!userName){
+//         throw new apiError(400, 'userName is required')
+//     }
+
+//     const user = await User.findOne({userName: userName})
+//     if(!user){
+//         throw new apiError(404, 'user not found')
+//     }
+//     const otp = generateOTP()
+//     const tempuser = await tempUser.create({
+//         userName: userName,
+//         email: user.email,
+//         otp,
+//        otpExpiry: Date.now() + 5 * 60 * 1000, // 5 minutes
+//     })
+
+//     const message = `<div style="font-family: Arial, sans-serif; padding:20px;">
+//                     <h2>Tweel - OTP Verification</h2>
+//                     <p><strong>Dear, ${userName} </strong></p><br><br>
+//                     <p>Your OTP for  Forgot Password is:</p>
+//                     <h1 style="letter-spacing:5px;">${otp}</h1>
+//                     <p>This OTP is valid for 5 minutes.</p>
+//                     <p>If you did not request this, please ignore this email.</p>
+//                     <br/>
+//                     <p>Thanks,<br/>Tweel Team</p>
+//                     </div>`
+
+//     const mail = sendMail(user.email, 'Forgot Password OTP - Tweel', message)
+
+ })
+
 
 
 //setting => personal info, edit like email
