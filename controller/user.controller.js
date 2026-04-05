@@ -381,7 +381,7 @@ export const userEditProfile = asyncHandler(async(req, res) => {
 })
 
 
-
+// own profile
 export const getProfile = asyncHandler(async(req, res)=>{
     const userName = req.params.userName
     if(!userName){
@@ -458,9 +458,13 @@ export const changePassword = asyncHandler(async(req, res) => {
 //setting => personal info, edit like email
 // setting => change password and forgotPassword{when login}
 
+// own prfile
 // user profile => user/userName/tweet
 // user profile => user/userName/likedBy
 // user prfile => user/userName/media
-// user profile => user/userName/replies
+// user profile => user/userName/comments
 // user profile => followers and following {count and list}
 //
+
+// someones profile
+// follwers, following, username name, avt, coverImg, tweet, media, comments

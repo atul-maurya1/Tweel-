@@ -26,3 +26,6 @@ const tweetSchema = new mongoose.Schema({
 const Tweet = mongoose.model("Tweet", tweetSchema)
 
 export default Tweet
+
+// add ---
+// => add counts like, comments, save, views 
