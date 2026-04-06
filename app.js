@@ -17,12 +17,14 @@ import tweetRouter from './routes/tweet.routes.js'
 import followRouter from './routes/follow.routes.js'
 import likeRouter from './routes/like.routes.js'
 import commentRouter from './routes/comment.routes.js'
+import saveRouter from './routes/save.routes.js'
 
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/tweet', tweetRouter)
 app.use('/api/v1/follow', followRouter)
 app.use('/api/v1/like', likeRouter)
 app.use('/api/v1/comment', commentRouter)
+app.use('/api/v1/save', saveRouter)
 
 
 export default app

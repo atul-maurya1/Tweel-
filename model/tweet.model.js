@@ -19,6 +19,9 @@ const tweetSchema = new mongoose.Schema({
         public_id: {type: String},
         url: {type: String}
     },
+    likesCount: {type: Number, default: 0},
+    commentsCount: {type: Number, default: 0},
+    saveCount: {type: Number, default: 0}
 
 }, {timestamps: true})
 

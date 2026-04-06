@@ -4,7 +4,7 @@ import apiResponse from '../utils/apiResponse.js'
 import asyncHandler from '../utils/asyncHandler.js'
 import {uploadOnCloudinary} from '../config/cloudnary.js'
 import {deleteFromCloudinary} from '../config/cloudnary.js'
-import Tweet from '../model/tweet .model.js'
+import Tweet from '../model/tweet.model.js'
 
 export const createTweet = asyncHandler(async(req, res) => {
     const userName = req.user.userName

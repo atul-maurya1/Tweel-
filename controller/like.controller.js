@@ -2,6 +2,7 @@ import Like from '../model/likes.model.js'
 import apiError from '../utils/apiError.js'
 import apiResponse from '../utils/apiResponse.js'
 import asyncHandler from '../utils/asyncHandler.js'
+import Tweet from '../model/tweet.model.js'
 
 export const tweetLikedByUser = asyncHandler(async(req, res) => {
     const userId = req.user._id
@@ -12,14 +13,18 @@ export const tweetLikedByUser = asyncHandler(async(req, res) => {
         tweet: tweetId
     })
     
-    console.log("like tweet is: ", likedTweet)
+    
 
     if(likedTweet){
         //unlike
         await Like.findByIdAndDelete(likedTweet._id)
-       const totalLike  = await Like.countDocuments({tweet: tweetId})
+
+        await Tweet.findByIdAndUpdate(tweetId, {
+            $inc: {likesCount: -1}
+        })
+
         return res.status(200)
-            .json( new apiResponse(200,  {message: "unlike", isliked: false, totalLike})
+            .json( new apiResponse(200,  {message: "unlike", isliked: false})
       )
     }else{
         //like
@@ -27,9 +32,11 @@ export const tweetLikedByUser = asyncHandler(async(req, res) => {
              likedBy: userId,
              tweet: tweetId
         })
-         const totalLike  = await Like.countDocuments({tweet: tweetId})
+          await Tweet.findByIdAndUpdate(tweetId, {
+            $inc: {likesCount: 1}
+        })
          return res.status(200)
-            .json( new apiResponse(200,  {message: "like", isliked: true, totalLike})
+            .json( new apiResponse(200,  {message: "like", isliked: true})
       )
     }
 
