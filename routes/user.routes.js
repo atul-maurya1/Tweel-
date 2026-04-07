@@ -17,7 +17,10 @@ import {
     userEditProfile,
     refreshAccessToken,
     changePassword,
-    forgotPassword
+    forgotPassword,
+    getProfile,
+    getUserTweet,
+    getUserLikes
   } from '../controller/user.controller.js'
 
 userRouter
@@ -33,6 +36,9 @@ userRouter
          .post('/refresh-access-token', verifyJWT, refreshAccessToken)
          .post('/change-password',verifyJWT, changePassword)
          .post('forgot-password',  forgotPassword)
+         .get('/profile', verifyJWT, getProfile)
+         .get('/profile/tweets', verifyJWT, getUserTweet)
+         .get('/profile/likes', verifyJWT, getUserLikes)
          
 
          

@@ -8,6 +8,9 @@ import jwt from 'jsonwebtoken'
 import {sendMail} from '../utils/sendMail.js'
 import {uploadOnCloudinary} from '../config/cloudnary.js'
 import {deleteFromCloudinary} from '../config/cloudnary.js'
+import Follow from '../model/follow.model.js'
+import Tweet from '../model/tweet.model.js'
+import Like from '../model/likes.model.js'
 
 
 export const gnerateaccessTokenAndRefreshToken = async (userId) => {
@@ -383,11 +386,59 @@ export const userEditProfile = asyncHandler(async(req, res) => {
 
 // own profile
 export const getProfile = asyncHandler(async(req, res)=>{
-    const userName = req.params.userName
-    if(!userName){
+    const userId = req.user.id
+    if(!userId){
         throw new apiError(400, "user not exists")
     }
+
+    const user = await User.findOne({_id: userId}).select('-password -refreshToken -email')
+    if(!user){
+        throw new apiError(404, 'user not found')
+    }
+    console.log("user is : ", user)
+    
+    //followers and following
+     const follower = await Follow.countDocuments({following: userId})
+     const following = await Follow.countDocuments({follower: userId})
+
+
+     return res
+            .status(200)
+            .json(new apiResponse(200, {user, follower, following,  message: "User fetched successfully"}))
+
 })
+
+export const getUserTweet = asyncHandler(async(req, res) => {
+    const userId = req.user.id
+    
+    const tweets = await Tweet.find({ createdBy: userId }).sort({ createdAt: -1 });
+    if(tweets.length === 0){
+        throw new apiError(404, 'No tweet found')
+    }
+
+    return res.status(200).json(new apiResponse(200, {tweets, message: 'all tweets find successfully'}))
+
+})
+
+export const getUserLikes = asyncHandler(async(req, res) => {
+    const userId = req.user.id
+
+    const likesPost = await Like.find({likedBy: userId}).sort({ createdAt: -1 })
+    .populate('tweet')
+    if(likesPost.lengh === 0){
+        throw new apiError(404, 'no likes tweets')
+    }
+     return res.status(200).json(new apiResponse(200, {likesPost, message: 'all likes tweets find successfully'}))
+})
+
+
+
+
+
+
+
+
+
 
 export const changePassword = asyncHandler(async(req, res) => {
     const userId = req.user._id
