@@ -107,3 +107,13 @@ export const deleteTweet = asyncHandler( async (req, res) => {
            .json(new apiResponse(200, 'tweet deleted'))
 
 })
+
+export const followingFeed = asyncHandler(async(req, res) => {
+    const userId = req.user.id
+    const tweet = await Tweet.find({follower: userId})
+    if(tweet.length===0){
+        throw new apiError(404, 'no tweet found')
+    }
+   return res.status(200).json(new apiResponse(200, {tweet, message: 'tweet fetched successfully'}))
+
+})

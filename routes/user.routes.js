@@ -20,7 +20,9 @@ import {
     forgotPassword,
     getProfile,
     getUserTweet,
-    getUserLikes
+    getUserLikes,
+    userSaveTweet,
+    
   } from '../controller/user.controller.js'
 
 userRouter
@@ -39,6 +41,8 @@ userRouter
          .get('/profile', verifyJWT, getProfile)
          .get('/profile/tweets', verifyJWT, getUserTweet)
          .get('/profile/likes', verifyJWT, getUserLikes)
+         .get('/profile/save', verifyJWT, userSaveTweet) 
+         
          
 
          

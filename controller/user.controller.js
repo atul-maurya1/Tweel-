@@ -11,6 +11,7 @@ import {deleteFromCloudinary} from '../config/cloudnary.js'
 import Follow from '../model/follow.model.js'
 import Tweet from '../model/tweet.model.js'
 import Like from '../model/likes.model.js'
+import Save from '../model/save.model.js'
 
 
 export const gnerateaccessTokenAndRefreshToken = async (userId) => {
@@ -429,6 +430,19 @@ export const getUserLikes = asyncHandler(async(req, res) => {
         throw new apiError(404, 'no likes tweets')
     }
      return res.status(200).json(new apiResponse(200, {likesPost, message: 'all likes tweets find successfully'}))
+})
+
+export const userSaveTweet = asyncHandler(async(req, res) => {
+    const userId = req.user.id
+    const saveTweet = await Save.find({user: userId}).sort({createdAt: -1})
+    .populate('tweet')
+
+     .populate('tweet')
+    if(saveTweet.lengh === 0){
+        throw new apiError(404, 'no likes tweets')
+    }
+     return res.status(200).json(new apiResponse(200, {saveTweet, message: 'all likes tweets find successfully'}))
+
 })
 
 
