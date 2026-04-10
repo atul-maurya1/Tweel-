@@ -12,6 +12,7 @@ import Follow from '../model/follow.model.js'
 import Tweet from '../model/tweet.model.js'
 import Like from '../model/likes.model.js'
 import Save from '../model/save.model.js'
+import Comment from '../model/comment.model.js'
 
 
 export const gnerateaccessTokenAndRefreshToken = async (userId) => {
@@ -445,14 +446,19 @@ export const userSaveTweet = asyncHandler(async(req, res) => {
 
 })
 
+export const getUserCommentTweet = asyncHandler(async(req, res) => {
+    const userId = req.user.id
+    const commentOnTweet = await Comment.find({user: userId})
+    .populate("user", "id userName avatar")
+    .populate("tweet")
+    if(commentOnTweet.length===0){
+        throw new apiError(404, 'No comments')
+    }
+    return res
+           .status(200)
+           .json(new apiResponse(200, commentOnTweet, 'comment fetched successfully'))
 
-
-
-
-
-
-
-
+})
 
 export const changePassword = asyncHandler(async(req, res) => {
     const userId = req.user._id
@@ -518,18 +524,3 @@ export const changePassword = asyncHandler(async(req, res) => {
 
  })
 
-
-
-//setting => personal info, edit like email
-// setting => change password and forgotPassword{when login}
-
-// own prfile
-// user profile => user/userName/tweet
-// user profile => user/userName/likedBy
-// user prfile => user/userName/media
-// user profile => user/userName/comments
-// user profile => followers and following {count and list}
-//
-
-// someones profile
-// follwers, following, username name, avt, coverImg, tweet, media, comments

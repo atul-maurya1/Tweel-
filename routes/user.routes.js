@@ -22,7 +22,7 @@ import {
     getUserTweet,
     getUserLikes,
     userSaveTweet,
-    
+    getUserCommentTweet    
   } from '../controller/user.controller.js'
 
 userRouter
@@ -42,7 +42,7 @@ userRouter
          .get('/profile/tweets', verifyJWT, getUserTweet)
          .get('/profile/likes', verifyJWT, getUserLikes)
          .get('/profile/save', verifyJWT, userSaveTweet) 
-         
+         .get('/profile/comment', verifyJWT, getUserCommentTweet)
          
 
          
